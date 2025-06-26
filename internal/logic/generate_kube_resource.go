@@ -1,53 +1,47 @@
-package util
+package logic
 
 import (
 	"fmt"
-	"gpu-container-service/internal/model"
-	"gpu-container-service/pkg/util"
+	"github.com/zeromicro/go-zero/core/logx"
+	"gpu-container-service/internal/types"
+	"gpu-container-service/pkg"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"k8s.io/klog/v2"
-	"strconv"
 	"strings"
 )
 
-var SSHPort int32 = 22
-var JupyterPort int32 = 8888
-var TestNodePort int32 = 30000
+var (
+	SSHPort           int32 = 22
+	JupyterPort       int32 = 8888
+	GPUContainerLabel       = "mfy.com/gpu-container"
+	GPUtypeLabel            = "mfy.com/gpu-type"
+	DeafultDomain           = "containercloud-xian.xaidc.com"
+)
 
-// GenerateDeploymentTemplate 生成Deployment模板
-func GenerateDeploymentTemplate(req model.DeployCreateRequest) (*appsv1.Deployment, error) {
-	// 增加判空
-	replicas, err := ParseReplicas(req.Replicas)
+func GenerateDeploymentTemplate(req *types.CreateInstanceRequest, namespace string) (*appsv1.Deployment, error) {
+	logx.Info("Generate New Deployment Template")
+	labels, err := ParseLabels(req.Name, req.Labels)
 	if err != nil {
-		return nil, fmt.Errorf("ParseReplicas Error: %v", err)
-	}
-	if replicas == 0 {
-
+		return nil, fmt.Errorf("Parse Label Error: %v", err)
 	}
 
-	labels, err := ParseLabels(req.Labels)
+	podTemplate, err := GeneratePodTemplate(req, labels)
 	if err != nil {
-		return nil, fmt.Errorf("ParseLabels Error: %v", err)
+		return nil, fmt.Errorf("Generate Pod Template Error: %v", err)
 	}
 
-	podTemplate, err := GeneratePodTemplate(req)
-	if err != nil {
-		return nil, fmt.Errorf("GeneratePodTemplate Error: %v", err)
-	}
-
-	deployment := &appsv1.Deployment{
+	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			GenerateName: req.Name + "-",
-			Namespace:    req.Namespace,
+			Namespace:    namespace,
 			Labels:       labels,
 			Annotations:  map[string]string{},
 		},
 		Spec: appsv1.DeploymentSpec{
-			Replicas: &replicas,
+			Replicas: &req.Replicas,
 			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{
 					"app": req.Name,
@@ -55,18 +49,11 @@ func GenerateDeploymentTemplate(req model.DeployCreateRequest) (*appsv1.Deployme
 			},
 			Template: podTemplate,
 		},
-	}
-
-	return deployment, nil
+	}, nil
 }
 
-// GeneratePodTemplate 生成Pod模板
-func GeneratePodTemplate(req model.DeployCreateRequest) (v1.PodTemplateSpec, error) {
-	labels, err := ParseLabels(req.Labels)
-	if err != nil {
-		return v1.PodTemplateSpec{}, fmt.Errorf("ParseLabels Error: %v", err)
-	}
-	labels["app"] = req.Name
+func GeneratePodTemplate(req *types.CreateInstanceRequest, labels map[string]string) (v1.PodTemplateSpec, error) {
+	logx.Info("Generate New Pod Template")
 
 	env := []v1.EnvVar{
 		{
@@ -83,7 +70,7 @@ func GeneratePodTemplate(req model.DeployCreateRequest) (v1.PodTemplateSpec, err
 		},
 	}
 
-	mainContainer := v1.Container{
+	container := v1.Container{
 		Name:  req.Name,
 		Image: req.Image,
 		Ports: []v1.ContainerPort{
@@ -96,7 +83,7 @@ func GeneratePodTemplate(req model.DeployCreateRequest) (v1.PodTemplateSpec, err
 				ContainerPort: JupyterPort,
 			},
 		},
-		Resources: ParseResources(req.Resources),
+		Resources: ParseResources(req.ResourceRequest),
 		Env:       env,
 		EnvFrom: []v1.EnvFromSource{
 			{
@@ -114,22 +101,25 @@ func GeneratePodTemplate(req model.DeployCreateRequest) (v1.PodTemplateSpec, err
 			Labels: labels,
 		},
 		Spec: v1.PodSpec{
-			Containers: []v1.Container{mainContainer},
+			Containers: []v1.Container{container},
+			NodeSelector: map[string]string{
+				GPUContainerLabel: "true",
+				GPUtypeLabel:      req.ResourceRequest.GPUType,
+			},
 		},
 	}, nil
 }
 
-// GenerateSecretTemplate 生成Secret模板
-func GenerateSecretTemplate(req model.DeployCreateRequest, deployment *appsv1.Deployment) (*v1.Secret, error) {
-	password, hashedPassword, err := util.GenerateJupyterPassword()
+func GenerateSecretTemplate(req *types.CreateInstanceRequest, deployment *appsv1.Deployment, namespace string) (*v1.Secret, error) {
+	password, hashedPassword, err := pkg.GenerateJupyterPassword()
 	if err != nil {
 		return nil, fmt.Errorf("GenerateJupyterPassword Error: %v", err)
 	}
 
-	secret := &v1.Secret{
+	return &v1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      req.Name + "-secret",
-			Namespace: req.Namespace,
+			Namespace: namespace,
 			OwnerReferences: []metav1.OwnerReference{
 				{
 					APIVersion: appsv1.SchemeGroupVersion.String(),
@@ -146,17 +136,14 @@ func GenerateSecretTemplate(req model.DeployCreateRequest, deployment *appsv1.De
 			"NB_PASSWD":        password,
 			"NB_HASHED_PASSWD": hashedPassword,
 		},
-	}
-
-	return secret, nil
+	}, nil
 }
 
-// GenerateServiceTemplate 生成Service模板
-func GenerateServiceTemplate(req model.DeployCreateRequest, deployment *appsv1.Deployment) (*v1.Service, error) {
-	service := &v1.Service{
+func GenerateServiceTemplate(req *types.CreateInstanceRequest, deployment *appsv1.Deployment, namespace string) (*v1.Service, error) {
+	return &v1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      req.Name + "-service",
-			Namespace: req.Namespace,
+			Namespace: namespace,
 			Labels: map[string]string{
 				"app":       req.Name,
 				"create-by": "mck",
@@ -185,34 +172,18 @@ func GenerateServiceTemplate(req model.DeployCreateRequest, deployment *appsv1.D
 					},
 				},
 				{
-					Name: "http",
+					Name: "jupyter",
 					Port: JupyterPort,
 					TargetPort: intstr.IntOrString{
 						IntVal: JupyterPort,
 					},
-					// NodePort: TestNodePort,
 				},
 			},
 		},
-	}
-
-	return service, nil
+	}, nil
 }
 
-// ParseReplicas 解析请求中副本数
-func ParseReplicas(replicasStr string) (int32, error) {
-	if replicasStr == "" {
-		return 1, fmt.Errorf("ReplicasStr is empty")
-	}
-	replicas, err := strconv.Atoi(replicasStr)
-	if err != nil || replicas <= 0 {
-		return 1, fmt.Errorf("ReplicasStr is invalid")
-	}
-	return int32(replicas), nil
-}
-
-// 解析请求中资源申请
-func ParseResources(res model.Resources) v1.ResourceRequirements {
+func ParseResources(res types.Resources) v1.ResourceRequirements {
 	requirements := v1.ResourceRequirements{
 		Requests: make(v1.ResourceList),
 		Limits:   make(v1.ResourceList),
@@ -232,8 +203,8 @@ func ParseResources(res model.Resources) v1.ResourceRequirements {
 		}
 	}
 
-	if res.GPU != "" {
-		if gpu, err := resource.ParseQuantity(res.GPU); err == nil {
+	if res.GPU.Num != "" {
+		if gpu, err := resource.ParseQuantity(res.GPU.Num); err == nil {
 			requirements.Requests[v1.ResourceName("nvidia.com/gpu")] = gpu
 			requirements.Limits[v1.ResourceName("nvidia.com/gpu")] = gpu
 		}
@@ -242,24 +213,24 @@ func ParseResources(res model.Resources) v1.ResourceRequirements {
 	return requirements
 }
 
-// 解析请求中标签信息
-func ParseLabels(labelSpec string) (map[string]string, error) {
-	labels := map[string]string{}
-	if len(labelSpec) == 0 {
-		klog.Errorf("labels in request is empty")
+func ParseLabels(name, labelStr string) (map[string]string, error) {
+	labels := map[string]string{
+		"app": name,
+	}
+	if len(labelStr) == 0 {
 		return labels, nil
 	}
 
-	labelSpecs := strings.Split(labelSpec, ",")
-	for ix := range labelSpecs {
-		labelSpec := strings.Split(labelSpecs[ix], "=")
-		if len(labelSpec) != 2 {
-			return nil, fmt.Errorf("unexpected label spec: %s", labelSpecs[ix])
+	labelStrs := strings.Split(labelStr, ",")
+	for ix := range labelStrs {
+		labelStr := strings.Split(labelStrs[ix], "=")
+		if len(labelStr) != 2 {
+			return nil, fmt.Errorf("unexpected label spec: %s", labelStrs[ix])
 		}
-		if len(labelSpec[0]) == 0 {
+		if len(labelStr[0]) == 0 {
 			return nil, fmt.Errorf("unexpected empty label key")
 		}
-		labels[labelSpec[0]] = labelSpec[1]
+		labels[labelStr[0]] = labelStr[1]
 	}
 	return labels, nil
 }
