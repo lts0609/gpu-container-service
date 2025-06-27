@@ -153,8 +153,7 @@ func GenerateServiceTemplate(req *types.CreateInstanceRequest, deployment *appsv
 			Name:      req.Name + "-service",
 			Namespace: namespace,
 			Labels: map[string]string{
-				"app":       req.Name,
-				"create-by": "mck",
+				"app": req.Name,
 			},
 			Annotations: map[string]string{
 				"request_uuid": req.RequestUUID,
