@@ -1,15 +1,46 @@
 syntax = "v1"
 
-type Request {
-	Name string `path:"name,options=you|me"`
-}
+type (
+    GPUResource {
+        Type string `json:"type"`
+        Num  string `json:"num"`
+    }
 
-type Response {
-	Message string `json:"message"`
-}
+    PVCResource {
+        PVC  string `json:"pvc"`
+        Size string `json:"size"`
+    }
 
-service service-api {
-	@handler CreateInstanceHandler
-	get /from/:name (Request) returns (Response)
-}
+    StorageResource {
+        SystemDisk string        `json:"system_disk"`
+        DataVolume []PVCResource `json:"data_volume"`
+    }
 
+    Resources {
+        CPU     string      `json:"cpu"`
+        Memory  string      `json:"memory"`
+        GPU     GPUResource `json:"gpu"`
+        GPUType string      `json:"gpu_type"`
+    }
+
+    CreateInstanceRequest {
+        RequestUUID     string    `json:"request_uuid"`
+        CreateUser      string    `json:"create_user"`
+        Name            string    `json:"name"`
+        Replicas        int32     `json:"replicas"`
+        Image           string    `json:"image"`
+        ChargeType      string    `json:"charge_type"`
+        ResourceRequest Resources `json:"resource_request"`
+        Labels          string    `json:"labels"`
+    }
+
+    CreateInstanceResponse {
+        Code    int    `json:"code"`
+        Message string `json:"message"`
+    }
+)
+
+service gpu-container-service {
+    @handler CreateInstance
+    post /gpu-containers/instances (CreateInstanceRequest) returns (CreateInstanceResponse)
+}

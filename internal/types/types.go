@@ -7,37 +7,37 @@ import "fmt"
 
 type (
 	GPUResource struct {
-		Type string
-		Num  string
+		Type string `json:"type"`
+		Num  string `json:"num"`
 	}
 
 	StorageResource struct {
-		SystemDisk string
-		DataVolume PVCResource
+		SystemDisk string        `json:"system_disk"`
+		DataVolume []PVCResource `json:"data_volume"`
 	}
 
 	PVCResource struct {
-		PVC  string
-		Size string
+		PVC  string `json:"pvc"`
+		Size string `json:"size"`
 	}
 
 	Resources struct {
-		CPU     string `json:"cpu"`
-		Memory  string `json:"memory"`
-		GPU     GPUResource
-		GPUType string `json:"gpu_type"`
+		CPU     string      `json:"cpu"`
+		Memory  string      `json:"memory"`
+		GPU     GPUResource `json:"gpu"`
+		GPUType string      `json:"gpu_type"`
 	}
 )
 
 type CreateInstanceRequest struct {
-	RequestUUID     string
-	CreateUser      string
-	Name            string
-	Replicas        int32
-	Image           string
-	ChargeType      string
-	ResourceRequest Resources
-	Labels          string
+	RequestUUID     string    `json:"request_uuid"`
+	CreateUser      string    `json:"create_user"`
+	Name            string    `json:"name"`
+	Replicas        int32     `json:"replicas"`
+	Image           string    `json:"image"`
+	ChargeType      string    `json:"charge_type"`
+	ResourceRequest Resources `json:"resource_request"`
+	Labels          string    `json:"labels"`
 }
 
 type CreateInstanceResponse struct {
