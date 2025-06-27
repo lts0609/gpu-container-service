@@ -38,7 +38,9 @@ func GenerateDeploymentTemplate(req *types.CreateInstanceRequest, namespace stri
 			GenerateName: req.Name + "-",
 			Namespace:    namespace,
 			Labels:       labels,
-			Annotations:  map[string]string{},
+			Annotations: map[string]string{
+				"request_uuid": req.RequestUUID,
+			},
 		},
 		Spec: appsv1.DeploymentSpec{
 			Replicas: &req.Replicas,
@@ -99,6 +101,9 @@ func GeneratePodTemplate(req *types.CreateInstanceRequest, labels map[string]str
 	return v1.PodTemplateSpec{
 		ObjectMeta: metav1.ObjectMeta{
 			Labels: labels,
+			Annotations: map[string]string{
+				"request_uuid": req.RequestUUID,
+			},
 		},
 		Spec: v1.PodSpec{
 			Containers: []v1.Container{container},
@@ -120,6 +125,9 @@ func GenerateSecretTemplate(req *types.CreateInstanceRequest, deployment *appsv1
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      req.Name + "-secret",
 			Namespace: namespace,
+			Annotations: map[string]string{
+				"request_uuid": req.RequestUUID,
+			},
 			OwnerReferences: []metav1.OwnerReference{
 				{
 					APIVersion: appsv1.SchemeGroupVersion.String(),
@@ -147,6 +155,9 @@ func GenerateServiceTemplate(req *types.CreateInstanceRequest, deployment *appsv
 			Labels: map[string]string{
 				"app":       req.Name,
 				"create-by": "mck",
+			},
+			Annotations: map[string]string{
+				"request_uuid": req.RequestUUID,
 			},
 			OwnerReferences: []metav1.OwnerReference{
 				{
