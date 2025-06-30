@@ -55,5 +55,7 @@ func (r *Router) Post(p string, h http.HandlerFunc) {
 
 func RegisterHandlers(r *Router, serverCtx *svc.CreateInstanceContext, client clientset.Interface) {
 	instance_creator := NewCreateInstanceHandler(serverCtx, client)
+	socket_manager := NewTerminalSessionHandler(serverCtx)
 	r.Post("/gpu-containers/instances", instance_creator.CreateInstance)
+	r.Get("/gpu-containers/terminals", socket_manager.TerminalSession)
 }

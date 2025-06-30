@@ -45,6 +45,18 @@ type CreateInstanceResponse struct {
 	Message string `json:"message"`
 }
 
+type TerminalSessionRequest struct {
+	PodName       string `json:"pod_name"`
+	ContainerName string `json:"container_name"`
+	Shell         string `json:"shell"`
+}
+
+type TerminalSessionResponse struct {
+	Code      int    `json:"code"`
+	SessionId string `json:"session_id"`
+	Message   string `json:"message"`
+}
+
 func (c *CreateInstanceRequest) Validate(req *CreateInstanceRequest) error {
 	if req.Replicas < 1 {
 		return fmt.Errorf("Validate Error: Replicas must be greater than zero")

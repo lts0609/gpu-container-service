@@ -25,7 +25,7 @@ func main() {
 	server := rest.MustNewServer(c.RestConf)
 	defer server.Stop()
 
-	ctx := svc.NewCreateInstanceContext(c)
+	ctx := svc.NewGpuContainerServiceContext(c)
 	logx.Errorf("Router Registration Processing")
 	r := handler.NewRouter(server)
 	builder, err := pkg.NewClientBuilder("")

@@ -14,10 +14,10 @@ import (
 type CreateInstanceLogic struct {
 	logx.Logger
 	ctx    context.Context
-	svcCtx *svc.CreateInstanceContext
+	svcCtx *svc.GpuContainerServiceContext
 }
 
-func NewCreateInstanceLogic(ctx context.Context, svcCtx *svc.CreateInstanceContext) *CreateInstanceLogic {
+func NewCreateInstanceLogic(ctx context.Context, svcCtx *svc.GpuContainerServiceContext) *CreateInstanceLogic {
 	return &CreateInstanceLogic{
 		Logger: logx.WithContext(ctx),
 		ctx:    ctx,
