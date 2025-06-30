@@ -13,17 +13,17 @@ import (
 )
 
 type TerminalSessionHandler struct {
-	svcCtx *svc.CreateInstanceContext
+	svcCtx *svc.GpuContainerServiceContext
 }
 
-func NewTerminalSessionHandler(svcCtx *svc.CreateInstanceContext) *TerminalSessionHandler {
+func NewTerminalSessionHandler(svcCtx *svc.GpuContainerServiceContext) *TerminalSessionHandler {
 	return &TerminalSessionHandler{
 		svcCtx: svcCtx,
 	}
 }
 
 func (t *TerminalSessionHandler) TerminalSession(w http.ResponseWriter, r *http.Request) {
-	var req types.CreateInstanceRequest
+	var req types.TerminalSessionRequest
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 	defer cancel()
 
