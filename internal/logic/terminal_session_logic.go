@@ -23,10 +23,12 @@ func NewTerminalSessionLogic(ctx context.Context, svcCtx *svc.GpuContainerServic
 	}
 }
 
-func (l *TerminalSessionLogic) Service(ctx context.Context, req *types.TerminalSessionRequest) (resp *types.TerminalSessionResponse, err error) {
-	return &types.TerminalSessionResponse{
-		Code:      http.StatusOK,
-		SessionId: "",
-		Message:   "SessionId generate success",
+func (l *TerminalSessionLogic) Service(ctx context.Context, req *types.TerminalSessionRequest) (resp *types.Response, err error) {
+	return &types.Response{
+		Code:    http.StatusOK,
+		Message: "SessionId generate success",
+		Data: types.TerminalSessionResponseData{
+			SessionId: "",
+		},
 	}, err
 }

@@ -4,17 +4,25 @@
 package handler
 
 import (
+	"gpu-container-service/internal/svc"
 	clientset "k8s.io/client-go/kubernetes"
 	"net/http"
 
-	"gpu-container-service/internal/svc"
+	"gpu-container-service/internal/controller"
 
 	"github.com/zeromicro/go-zero/rest"
 )
 
-type Router struct {
-	server *rest.Server
-}
+type (
+	Router struct {
+		server *rest.Server
+	}
+
+	RouterGroup struct {
+		server *rest.Server
+		prefix string
+	}
+)
 
 func NewRouter(server *rest.Server) *Router {
 	return &Router{server: server}
@@ -25,17 +33,6 @@ func (r *Router) Get(p string, h http.HandlerFunc) {
 		[]rest.Route{
 			{
 				Method:  http.MethodGet,
-				Path:    p,
-				Handler: h,
-			},
-		})
-}
-
-func (r *Router) Put(p string, h http.HandlerFunc) {
-	r.server.AddRoutes(
-		[]rest.Route{
-			{
-				Method:  http.MethodPut,
 				Path:    p,
 				Handler: h,
 			},
@@ -53,9 +50,67 @@ func (r *Router) Post(p string, h http.HandlerFunc) {
 		})
 }
 
-func RegisterHandlers(r *Router, serverCtx *svc.CreateInstanceContext, client clientset.Interface) {
-	instance_creator := NewCreateInstanceHandler(serverCtx, client)
-	socket_manager := NewTerminalSessionHandler(serverCtx)
-	r.Post("/gpu-containers/instances", instance_creator.CreateInstance)
-	r.Get("/gpu-containers/terminals", socket_manager.TerminalSession)
+func (r *Router) Delete(p string, h http.HandlerFunc) {
+	r.server.AddRoutes(
+		[]rest.Route{
+			{
+				Method:  http.MethodDelete,
+				Path:    p,
+				Handler: h,
+			},
+		})
+}
+
+func (r *Router) Group(prefix string) *RouterGroup {
+	return &RouterGroup{
+		server: r.server,
+		prefix: prefix,
+	}
+}
+
+func (rg *RouterGroup) Get(p string, h http.HandlerFunc) {
+	rg.server.AddRoutes(
+		[]rest.Route{
+			{
+				Method:  http.MethodGet,
+				Path:    rg.prefix + p,
+				Handler: h,
+			},
+		})
+}
+
+func (rg *RouterGroup) Post(p string, h http.HandlerFunc) {
+	rg.server.AddRoutes(
+		[]rest.Route{
+			{
+				Method:  http.MethodPost,
+				Path:    rg.prefix + p,
+				Handler: h,
+			},
+		})
+}
+
+func (rg *RouterGroup) Delete(p string, h http.HandlerFunc) {
+	rg.server.AddRoutes(
+		[]rest.Route{
+			{
+				Method:  http.MethodDelete,
+				Path:    rg.prefix + p,
+				Handler: h,
+			},
+		})
+}
+
+func RegisterHandlers(r *Router, serverCtx *svc.GpuContainerServiceContext, client clientset.Interface) {
+	instance_manager := controller.NewInstanceController(serverCtx, client)
+	// refactor
+	session_manager := NewTerminalSessionHandler(serverCtx)
+
+	apiGroup := r.Group("/api/v1/gpu-containers")
+	apiGroup.Get("/terminals", session_manager.TerminalSession)
+	apiGroup.Post("/instances", instance_manager.CreateInstance)
+	apiGroup.Get("/instances", instance_manager.GetAllInstance)
+	apiGroup.Get("/instances/:uuid", instance_manager.GetInstance)
+	apiGroup.Delete("/instances/:uuid", instance_manager.DeleteInstance)
+	apiGroup.Get("/resources", instance_manager.DeleteInstance)
 }

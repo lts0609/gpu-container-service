@@ -5,7 +5,7 @@ import (
 	"github.com/zeromicro/go-zero/core/logx"
 	"gpu-container-service/internal/types"
 	"gpu-container-service/pkg"
-	appsv1 "k8s.io/api/apps/v1"
+	"hash/fnv"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -13,50 +13,24 @@ import (
 	"strings"
 )
 
-var (
-	SSHPort           int32 = 22
-	JupyterPort       int32 = 8888
-	GPUContainerLabel       = "mfy.com/gpu-container"
-	GPUtypeLabel            = "mfy.com/gpu-type"
-	DeafultDomain           = "containercloud-xian.xaidc.com"
+const (
+	SSHPort     int32 = 22
+	JupyterPort int32 = 8888
 )
 
-func GenerateDeploymentTemplate(req *types.CreateInstanceRequest, namespace string) (*appsv1.Deployment, error) {
-	logx.Info("Generate New Deployment Template")
+var (
+	DeafultDomain = "containercloud-xian.xaidc.com"
+	PodBaseName   = "gpu-instance"
+)
+
+func GeneratePodTemplate(req *types.CreateInstanceRequest, namespace string, gpuTypeLabelKey string, avaliableNodeLabelKey string) (*v1.Pod, error) {
+	logx.Info("Generate New Pod Template")
+
 	labels, err := ParseLabels(req.Name, req.Labels)
 	if err != nil {
 		return nil, fmt.Errorf("Parse Label Error: %v", err)
 	}
-
-	podTemplate, err := GeneratePodTemplate(req, labels)
-	if err != nil {
-		return nil, fmt.Errorf("Generate Pod Template Error: %v", err)
-	}
-
-	return &appsv1.Deployment{
-		ObjectMeta: metav1.ObjectMeta{
-			GenerateName: req.Name + "-",
-			Namespace:    namespace,
-			Labels:       labels,
-			Annotations: map[string]string{
-				"request_uuid": req.RequestUUID,
-			},
-		},
-		Spec: appsv1.DeploymentSpec{
-			Replicas: &req.Replicas,
-			Selector: &metav1.LabelSelector{
-				MatchLabels: map[string]string{
-					"app": req.Name,
-				},
-			},
-			Template: podTemplate,
-		},
-	}, nil
-}
-
-func GeneratePodTemplate(req *types.CreateInstanceRequest, labels map[string]string) (v1.PodTemplateSpec, error) {
-	logx.Info("Generate New Pod Template")
-
+	// generate jupyter enviroment
 	env := []v1.EnvVar{
 		{
 			Name: "POD_NAME",
@@ -71,9 +45,13 @@ func GeneratePodTemplate(req *types.CreateInstanceRequest, labels map[string]str
 			Value: "/notebook/$(POD_NAME)",
 		},
 	}
+	// calc pod hash-code by request uuid
+	hash := fnv.New32()
+	hash.Write([]byte(req.Uuid))
+	hashcode := fmt.Sprintf("%x", hash.Sum32())[:8]
 
 	container := v1.Container{
-		Name:  req.Name,
+		Name:  PodBaseName + "-" + hashcode,
 		Image: req.Image,
 		Ports: []v1.ContainerPort{
 			{
@@ -81,7 +59,7 @@ func GeneratePodTemplate(req *types.CreateInstanceRequest, labels map[string]str
 				ContainerPort: SSHPort,
 			},
 			{
-				Name:          "http",
+				Name:          "jupyter",
 				ContainerPort: JupyterPort,
 			},
 		},
@@ -98,24 +76,26 @@ func GeneratePodTemplate(req *types.CreateInstanceRequest, labels map[string]str
 		},
 	}
 
-	return v1.PodTemplateSpec{
+	return &v1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
-			Labels: labels,
+			Name:      PodBaseName + "-" + hashcode,
+			Namespace: namespace,
+			Labels:    labels,
 			Annotations: map[string]string{
-				"request_uuid": req.RequestUUID,
+				"uuid": req.Uuid,
 			},
 		},
 		Spec: v1.PodSpec{
 			Containers: []v1.Container{container},
 			NodeSelector: map[string]string{
-				GPUContainerLabel: "true",
-				GPUtypeLabel:      req.ResourceRequest.GPUType,
+				avaliableNodeLabelKey: "true",
+				gpuTypeLabelKey:       req.ResourceRequest.GPU.Type,
 			},
 		},
 	}, nil
 }
 
-func GenerateSecretTemplate(req *types.CreateInstanceRequest, deployment *appsv1.Deployment, namespace string) (*v1.Secret, error) {
+func GenerateSecretTemplate(req *types.CreateInstanceRequest, pod *v1.Pod, namespace string) (*v1.Secret, error) {
 	password, hashedPassword, err := pkg.GenerateJupyterPassword()
 	if err != nil {
 		return nil, fmt.Errorf("GenerateJupyterPassword Error: %v", err)
@@ -123,17 +103,17 @@ func GenerateSecretTemplate(req *types.CreateInstanceRequest, deployment *appsv1
 
 	return &v1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      req.Name + "-secret",
+			Name:      pod.Name + "-secret",
 			Namespace: namespace,
 			Annotations: map[string]string{
-				"request_uuid": req.RequestUUID,
+				"uuid": req.Uuid,
 			},
 			OwnerReferences: []metav1.OwnerReference{
 				{
-					APIVersion: appsv1.SchemeGroupVersion.String(),
-					Kind:       "Deployment",
-					Name:       deployment.Name,
-					UID:        deployment.UID,
+					APIVersion: v1.SchemeGroupVersion.String(),
+					Kind:       "Pod",
+					Name:       pod.Name,
+					UID:        pod.UID,
 					Controller: new(bool),
 				},
 			},
@@ -147,24 +127,20 @@ func GenerateSecretTemplate(req *types.CreateInstanceRequest, deployment *appsv1
 	}, nil
 }
 
-func GenerateServiceTemplate(req *types.CreateInstanceRequest, deployment *appsv1.Deployment, namespace string) (*v1.Service, error) {
+func GenerateServiceTemplate(req *types.CreateInstanceRequest, pod *v1.Pod, namespace string) (*v1.Service, error) {
 	return &v1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      req.Name + "-service",
+			Name:      pod.Name + "-" + "service",
 			Namespace: namespace,
-			Labels: map[string]string{
-				"app": req.Name,
-			},
 			Annotations: map[string]string{
-				"request_uuid": req.RequestUUID,
+				"uuid": req.Uuid,
 			},
 			OwnerReferences: []metav1.OwnerReference{
 				{
-					APIVersion: appsv1.SchemeGroupVersion.String(),
-					Kind:       "Deployment",
-					Name:       deployment.Name,
-					UID:        deployment.UID,
-					Controller: new(bool),
+					APIVersion: v1.SchemeGroupVersion.String(),
+					Kind:       "Pod",
+					Name:       pod.Name,
+					UID:        pod.UID,
 				},
 			},
 		},
