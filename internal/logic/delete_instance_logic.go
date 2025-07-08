@@ -45,7 +45,7 @@ func (l *DeleteInstanceLogic) Service(ctx context.Context, req *types.DeleteInst
 	}
 
 	instance.Status = types.StatusTerminating
-	instance.DeleteTime = time.Now()
+	instance.DeleteTime = time.Now().String()
 	l.svcCtx.Instances[uuid] = instance
 	logx.Infof("delete instance success")
 

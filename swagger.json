@@ -1,0 +1,487 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "",
+    "version": ""
+  },
+  "schemes": [
+    "http",
+    "https"
+  ],
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "paths": {
+    "/api/v1/gpu-containers/instances": {
+      "get": {
+        "operationId": "GetAllInstance",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/Response"
+            }
+          }
+        },
+        "tags": [
+          "GpuContainerService"
+        ]
+      },
+      "post": {
+        "operationId": "CreateInstance",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/Response"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/CreateInstanceRequest"
+            }
+          }
+        ],
+        "tags": [
+          "GpuContainerService"
+        ]
+      }
+    },
+    "/api/v1/gpu-containers/instances/{uuid}": {
+      "get": {
+        "operationId": "GetInstance",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/Response"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "uuid",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "uuid",
+            "in": "query",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "GpuContainerService"
+        ]
+      },
+      "delete": {
+        "operationId": "DeleteInstance",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/Response"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "uuid",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/DeleteInstanceRequest"
+            }
+          }
+        ],
+        "tags": [
+          "GpuContainerService"
+        ]
+      }
+    },
+    "/api/v1/gpu-containers/terminals": {
+      "get": {
+        "operationId": "TerminalSession",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/Response"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "namespace",
+            "in": "query",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "pod_name",
+            "in": "query",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "container_name",
+            "in": "query",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "shell",
+            "in": "query",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "GpuContainerService"
+        ]
+      }
+    }
+  },
+  "definitions": {
+    "CreateInstanceRequest": {
+      "type": "object",
+      "properties": {
+        "uuid": {
+          "type": "string"
+        },
+        "user": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "image": {
+          "type": "string"
+        },
+        "charge_type": {
+          "type": "string"
+        },
+        "resource_request": {
+          "$ref": "#/definitions/Resources"
+        },
+        "labels": {
+          "type": "string"
+        }
+      },
+      "title": "CreateInstanceRequest",
+      "required": [
+        "uuid",
+        "name",
+        "image",
+        "charge_type",
+        "resource_request"
+      ]
+    },
+    "DeleteInstanceRequest": {
+      "type": "object",
+      "properties": {
+        "uuid": {
+          "type": "string"
+        }
+      },
+      "title": "DeleteInstanceRequest",
+      "required": [
+        "uuid"
+      ]
+    },
+    "DeleteInstanceResponseData": {
+      "type": "object",
+      "properties": {
+        "uuid": {
+          "type": "string"
+        }
+      },
+      "title": "DeleteInstanceResponseData",
+      "required": [
+        "uuid"
+      ]
+    },
+    "GPUResource": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string"
+        },
+        "num": {
+          "type": "string"
+        }
+      },
+      "title": "GPUResource",
+      "required": [
+        "type",
+        "num"
+      ]
+    },
+    "GetAllInstanceResponseData": {
+      "type": "object",
+      "properties": {
+        "cluster_name": {
+          "type": "string"
+        },
+        "total": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Instance"
+          }
+        }
+      },
+      "title": "GetAllInstanceResponseData",
+      "required": [
+        "cluster_name",
+        "total",
+        "items"
+      ]
+    },
+    "GetInstanceRequest": {
+      "type": "object",
+      "properties": {
+        "uuid": {
+          "type": "string"
+        }
+      },
+      "title": "GetInstanceRequest",
+      "required": [
+        "uuid"
+      ]
+    },
+    "GetInstanceResponseData": {
+      "type": "object",
+      "properties": {
+        "cluster_name": {
+          "type": "string"
+        },
+        "Item": {
+          "$ref": "#/definitions/Instance"
+        }
+      },
+      "title": "GetInstanceResponseData",
+      "required": [
+        "cluster_name",
+        "Item"
+      ]
+    },
+    "Instance": {
+      "type": "object",
+      "properties": {
+        "uuid": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "user": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string"
+        },
+        "image": {
+          "type": "string"
+        },
+        "create_time": {
+          "type": "string"
+        },
+        "start_time": {
+          "type": "string"
+        },
+        "delete_time": {
+          "type": "string"
+        },
+        "charge_type": {
+          "type": "string"
+        },
+        "links": {
+          "$ref": "#/definitions/Links"
+        },
+        "resource_request": {
+          "$ref": "#/definitions/Resources"
+        }
+      },
+      "title": "Instance",
+      "required": [
+        "uuid",
+        "name",
+        "user",
+        "status",
+        "image",
+        "create_time",
+        "start_time",
+        "delete_time",
+        "charge_type",
+        "links",
+        "resource_request"
+      ]
+    },
+    "Links": {
+      "type": "object",
+      "properties": {
+        "ssh_ip": {
+          "type": "string"
+        },
+        "ssh_user": {
+          "type": "string"
+        },
+        "ssh_port": {
+          "type": "string"
+        },
+        "jupyter_path": {
+          "type": "string"
+        }
+      },
+      "title": "Links",
+      "required": [
+        "ssh_ip",
+        "ssh_user",
+        "ssh_port",
+        "jupyter_path"
+      ]
+    },
+    "PVCResource": {
+      "type": "object",
+      "properties": {
+        "pvc": {
+          "type": "string"
+        },
+        "size": {
+          "type": "string"
+        }
+      },
+      "title": "PVCResource",
+      "required": [
+        "pvc",
+        "size"
+      ]
+    },
+    "Resources": {
+      "type": "object",
+      "properties": {
+        "cpu": {
+          "type": "string"
+        },
+        "memory": {
+          "type": "string"
+        },
+        "storage": {
+          "$ref": "#/definitions/StorageResource"
+        },
+        "gpu": {
+          "$ref": "#/definitions/GPUResource"
+        }
+      },
+      "title": "Resources",
+      "required": [
+        "cpu",
+        "memory",
+        "storage",
+        "gpu"
+      ]
+    },
+    "Response": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "message": {
+          "type": "string"
+        },
+        "data": {
+          "type": "string"
+        }
+      },
+      "title": "Response",
+      "required": [
+        "code",
+        "message"
+      ]
+    },
+    "StorageResource": {
+      "type": "object",
+      "properties": {
+        "system_disk": {
+          "type": "string"
+        },
+        "data_volume": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/PVCResource"
+          }
+        }
+      },
+      "title": "StorageResource",
+      "required": [
+        "system_disk"
+      ]
+    },
+    "TerminalSessionRequest": {
+      "type": "object",
+      "properties": {
+        "namespace": {
+          "type": "string"
+        },
+        "pod_name": {
+          "type": "string"
+        },
+        "container_name": {
+          "type": "string"
+        },
+        "shell": {
+          "type": "string"
+        }
+      },
+      "title": "TerminalSessionRequest",
+      "required": [
+        "namespace",
+        "pod_name",
+        "container_name",
+        "shell"
+      ]
+    },
+    "TerminalSessionResponseData": {
+      "type": "object",
+      "properties": {
+        "session_id": {
+          "type": "string"
+        }
+      },
+      "title": "TerminalSessionResponseData",
+      "required": [
+        "session_id"
+      ]
+    }
+  },
+  "securityDefinitions": {
+    "apiKey": {
+      "type": "apiKey",
+      "description": "Enter JWT Bearer token **_only_**",
+      "name": "Authorization",
+      "in": "header"
+    }
+  }
+}

@@ -103,6 +103,7 @@ func (rg *RouterGroup) Delete(p string, h http.HandlerFunc) {
 
 func RegisterHandlers(r *Router, serverCtx *svc.GpuContainerServiceContext, client clientset.Interface) {
 	instance_manager := controller.NewInstanceController(serverCtx, client)
+	cluster_manager := controller.NewClusterController(serverCtx, client)
 	// refactor
 	session_manager := NewTerminalSessionHandler(serverCtx)
 
@@ -112,5 +113,5 @@ func RegisterHandlers(r *Router, serverCtx *svc.GpuContainerServiceContext, clie
 	apiGroup.Get("/instances", instance_manager.GetAllInstance)
 	apiGroup.Get("/instances/:uuid", instance_manager.GetInstance)
 	apiGroup.Delete("/instances/:uuid", instance_manager.DeleteInstance)
-	apiGroup.Get("/resources", instance_manager.DeleteInstance)
+	apiGroup.Get("/resources", cluster_manager.GetClusterResource)
 }

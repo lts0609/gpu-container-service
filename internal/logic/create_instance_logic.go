@@ -52,9 +52,9 @@ func (l *CreateInstanceLogic) Service(ctx context.Context, req *types.CreateInst
 		User:            req.User,
 		Status:          types.StatusPreparing,
 		Image:           req.Image,
-		CreateTime:      time.Now(),
+		CreateTime:      time.Now().String(),
 		ChargeType:      req.ChargeType,
-		Links:           make(map[string]string),
+		Links:           types.Links{},
 		ResourceRequest: req.ResourceRequest,
 	}
 

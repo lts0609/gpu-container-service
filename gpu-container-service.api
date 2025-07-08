@@ -1,46 +1,98 @@
-syntax = "v1"
-
 type (
-    GPUResource {
-        Type string `json:"type"`
-        Num  string `json:"num"`
+	CreateInstanceRequest {
+		Uuid            string    `json:"uuid"`
+		User            string    `json:"user,omitempty"`
+		Name            string    `json:"name"`
+		Image           string    `json:"image"`
+		ChargeType      string    `json:"charge_type"`
+		ResourceRequest Resources `json:"resource_request"`
+		Labels          string    `json:"labels,omitempty"`
+	}
+	Resources {
+		CPU     string          `json:"cpu"`
+		Memory  string          `json:"memory"`
+		Storage StorageResource `json:"storage"`
+		GPU     GPUResource     `json:"gpu"`
+	}
+	StorageResource {
+		SystemDisk string        `json:"system_disk"`
+		DataVolume []PVCResource `json:"data_volume,omitempty"`
+	}
+	PVCResource {
+		PVC  string `json:"pvc"`
+		Size string `json:"size"`
+	}
+	GPUResource {
+		Type string `json:"type"`
+		Num  string `json:"num"`
+	}
+	GetInstanceRequest {
+		Uuid string `json:"uuid"`
+	}
+	GetAllInstanceResponseData {
+		ClusterName string     `json:"cluster_name"`
+		Total       int        `json:"total"`
+		Items       []Instance `json:"items"`
+	}
+	GetInstanceResponseData {
+		ClusterName string `json:"cluster_name"`
+		Item        Instance `json:"Item"`
+	}
+	Instance {
+		Uuid            string             `json:"uuid"`
+		Name            string             `json:"name"`
+		User            string             `json:"user"`
+		Status          string             `json:"status"`
+		Image           string             `json:"image"`
+		CreateTime      string             `json:"create_time"`
+		StartTime       string             `json:"start_time"`
+		DeleteTime      string             `json:"delete_time"`
+		ChargeType      string             `json:"charge_type"`
+		Links           Links              `json:"links"`
+		ResourceRequest Resources          `json:"resource_request"`
+	}
+    Links {
+        SSH_IP       string `json:"ssh_ip"`
+        SSH_USER     string `json:"ssh_user"`
+        SSH_Port     string `json:"ssh_port"`
+        JUPYTER_PATH string `json:"jupyter_path"`
     }
-
-    PVCResource {
-        PVC  string `json:"pvc"`
-        Size string `json:"size"`
-    }
-
-    StorageResource {
-        SystemDisk string        `json:"system_disk"`
-        DataVolume []PVCResource `json:"data_volume"`
-    }
-
-    Resources {
-        CPU     string      `json:"cpu"`
-        Memory  string      `json:"memory"`
-        GPU     GPUResource `json:"gpu"`
-        GPUType string      `json:"gpu_type"`
-    }
-
-    CreateInstanceRequest {
-        RequestUUID     string    `json:"request_uuid"`
-        CreateUser      string    `json:"create_user"`
-        Name            string    `json:"name"`
-        Replicas        int32     `json:"replicas"`
-        Image           string    `json:"image"`
-        ChargeType      string    `json:"charge_type"`
-        ResourceRequest Resources `json:"resource_request"`
-        Labels          string    `json:"labels"`
-    }
-
-    CreateInstanceResponse {
-        Code    int    `json:"code"`
-        Message string `json:"message"`
-    }
+	DeleteInstanceRequest {
+		Uuid string `json:"uuid"`
+	}
+	DeleteInstanceResponseData {
+		Uuid string `json:"uuid"`
+	}
+	Response {
+		Code    int    `json:"code"`
+		Message string `json:"message"`
+		Data    string `json:"data,omitempty"`
+	}
+	TerminalSessionRequest {
+		Namespace     string `json:"namespace"`
+		PodName       string `json:"pod_name"`
+		ContainerName string `json:"container_name"`
+		Shell         string `json:"shell"`
+	}
+	TerminalSessionResponseData {
+		SessionId string `json:"session_id"`
+	}
 )
 
-service gpu-container-service {
-    @handler CreateInstance
-    post /gpu-containers/instances (CreateInstanceRequest) returns (CreateInstanceResponse)
+service GpuContainerService {
+	@handler CreateInstance
+	post /api/v1/gpu-containers/instances (CreateInstanceRequest) returns (Response)
+
+	@handler GetAllInstance
+	get /api/v1/gpu-containers/instances returns (Response)
+
+	@handler GetInstance
+	get /api/v1/gpu-containers/instances/:uuid (GetInstanceRequest) returns (Response)
+
+	@handler DeleteInstance
+	delete /api/v1/gpu-containers/instances/:uuid (DeleteInstanceRequest) returns (Response)
+
+	@handler TerminalSession
+	get /api/v1/gpu-containers/terminals (TerminalSessionRequest) returns (Response)
 }
+
