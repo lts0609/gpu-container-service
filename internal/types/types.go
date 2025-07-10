@@ -106,11 +106,11 @@ type TerminalSessionResponseData struct {
 }
 
 type NodeResourceInfo struct {
-	Name        string `json:"name"`
-	GPUType     string `json:"gpu-type"`
-	Capacity    int    `json:"capacity"`
-	Allocated   int    `json:"allocated"`
-	Allocatable int    `json:"allocatable"`
+	Name    string `json:"name"`
+	GPUType string `json:"gpu-type"`
+	Total   int    `json:"total"`
+	Used    int    `json:"used"`
+	Remain  int    `json:"remain"`
 }
 
 type ClusterResourceResponseData struct {

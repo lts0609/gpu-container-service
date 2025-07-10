@@ -41,13 +41,13 @@ func (l *GetClusterResourceLogic) Service(ctx context.Context, client clientset.
 
 	var nodeInfos []types.NodeResourceInfo
 	for _, node := range nodes.Items {
-		capacity, allocated, allocatable := GetNodeGpuResource(node)
+		total, used, remain := GetNodeGpuResource(ctx, node, client)
 		i := types.NodeResourceInfo{
-			Name:        node.Name,
-			GPUType:     node.Labels[l.svcCtx.Config.GpuTypeLabel],
-			Capacity:    capacity,
-			Allocated:   allocated,
-			Allocatable: allocatable,
+			Name:    node.Name,
+			GPUType: node.Labels[l.svcCtx.Config.GpuTypeLabel],
+			Total:   total,
+			Used:    used,
+			Remain:  remain,
 		}
 		nodeInfos = append(nodeInfos, i)
 	}
@@ -62,20 +62,33 @@ func (l *GetClusterResourceLogic) Service(ctx context.Context, client clientset.
 	}, nil
 }
 
-func GetNodeGpuResource(node v1.Node) (capacity int, allocated int, allocatable int) {
-	capacityQuantity, ok := node.Status.Capacity["nvidia.com/gpu"]
-	if !ok {
-		logx.Errorf("Node %s has no nvidia.com/gpu capacity", node.Name)
-		return 0, 0, 0
-	}
-	capacity, _ = strconv.Atoi(capacityQuantity.String())
+func GetNodeGpuResource(ctx context.Context, node v1.Node, client clientset.Interface) (total int, used int, remain int) {
 	allocatableQuantity, ok := node.Status.Allocatable["nvidia.com/gpu"]
 	if !ok {
 		logx.Errorf("Node %s has no nvidia.com/gpu allocatable", node.Name)
 		return 0, 0, 0
 	}
-	allocatable, _ = strconv.Atoi(allocatableQuantity.String())
-	allocated = capacity - allocatable
+	total, _ = strconv.Atoi(allocatableQuantity.String())
 
-	return capacity, allocatable, capacity
+	used = 0
+	pods, err := client.CoreV1().Pods("").List(ctx, metav1.ListOptions{
+		FieldSelector: fmt.Sprintf("spec.nodeName=%s", node.Name),
+	})
+	if err != nil {
+		logx.Errorf("Failed to list pods on node %s", node.Name)
+		return 0, 0, 0
+	}
+	for _, pod := range pods.Items {
+		for _, container := range pod.Spec.Containers {
+			if gpuQuantity, ok := container.Resources.Requests[v1.ResourceName("nvidia.com/gpu")]; ok {
+				request, _ := strconv.Atoi(gpuQuantity.String())
+				used += request
+			}
+		}
+	}
+
+	remain = total - used
+	logx.Errorf("Node Resource total: %s, used: %s, allocated: %s", total, used, remain)
+
+	return total, used, remain
 }
