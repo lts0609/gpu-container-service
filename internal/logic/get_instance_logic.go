@@ -41,7 +41,7 @@ func (l *GetAllInstanceLogic) Service(ctx context.Context) (resp *types.Response
 	data := types.GetAllInstanceResponseData{
 		ClusterName: l.svcCtx.Config.ClusterName,
 		Total:       total,
-		Items:       make([]types.Instance, total),
+		Items:       make([]types.Instance, 0, total),
 	}
 	if total == 0 {
 		return &types.Response{
@@ -64,6 +64,8 @@ func (l *GetAllInstanceLogic) Service(ctx context.Context) (resp *types.Response
 
 func (l *GetInstanceLogic) Service(ctx context.Context, req *types.GetInstanceRequest) (resp *types.Response, err error) {
 	uuid := req.Uuid
+	logx.Infof("get uuid is:", uuid)
+	logx.Infof("now instance is %v", l.svcCtx.Instances)
 	item, ok := l.svcCtx.Instances[uuid]
 	if !ok {
 		return &types.Response{
