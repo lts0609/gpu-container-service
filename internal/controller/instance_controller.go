@@ -55,6 +55,7 @@ func (c *InstanceController) GetInstance(w http.ResponseWriter, r *http.Request)
 		httpx.ErrorCtx(r.Context(), w, err)
 		return
 	}
+	logx.Errorf("Handle Get All Instance Request: %v", req)
 	l := logic.NewGetInstanceLogic(r.Context(), c.svcCtx)
 	rsp, err := l.Service(ctx, &req)
 	if err != nil {

@@ -26,6 +26,11 @@ var (
 func GeneratePodTemplate(req *types.CreateInstanceRequest, namespace string, gpuTypeLabelKey string, avaliableNodeLabelKey string) (*v1.Pod, error) {
 	logx.Info("Generate New Pod Template")
 
+	// calc pod hash-code by request uuid
+	hash := fnv.New32()
+	hash.Write([]byte(req.Uuid))
+	hashcode := fmt.Sprintf("%x", hash.Sum32())[:8]
+	completedName := fmt.Sprintf("%s-%s", PodBaseName, hashcode)
 	labels, err := ParseLabels(req.Name, req.Labels)
 	if err != nil {
 		return nil, fmt.Errorf("Parse Label Error: %v", err)
@@ -33,25 +38,17 @@ func GeneratePodTemplate(req *types.CreateInstanceRequest, namespace string, gpu
 	// generate jupyter enviroment
 	env := []v1.EnvVar{
 		{
-			Name: "POD_NAME",
-			ValueFrom: &v1.EnvVarSource{
-				FieldRef: &v1.ObjectFieldSelector{
-					FieldPath: "metadata.name",
-				},
-			},
+			Name:  "POD_NAME",
+			Value: completedName,
 		},
 		{
 			Name:  "NB_PREFIX",
 			Value: "/notebook/$(POD_NAME)",
 		},
 	}
-	// calc pod hash-code by request uuid
-	hash := fnv.New32()
-	hash.Write([]byte(req.Uuid))
-	hashcode := fmt.Sprintf("%x", hash.Sum32())[:8]
 
 	container := v1.Container{
-		Name:  PodBaseName + "-" + hashcode,
+		Name:  completedName,
 		Image: req.Image,
 		Ports: []v1.ContainerPort{
 			{
@@ -69,7 +66,7 @@ func GeneratePodTemplate(req *types.CreateInstanceRequest, namespace string, gpu
 			{
 				SecretRef: &v1.SecretEnvSource{
 					LocalObjectReference: v1.LocalObjectReference{
-						Name: PodBaseName + "-" + hashcode + "-secret",
+						Name: completedName + "-secret",
 					},
 				},
 			},
