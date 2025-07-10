@@ -69,7 +69,7 @@ func GeneratePodTemplate(req *types.CreateInstanceRequest, namespace string, gpu
 			{
 				SecretRef: &v1.SecretEnvSource{
 					LocalObjectReference: v1.LocalObjectReference{
-						Name: req.Name + "-secret",
+						Name: PodBaseName + "-" + hashcode + "-secret",
 					},
 				},
 			},
@@ -186,6 +186,12 @@ func ParseResources(res types.Resources) v1.ResourceRequirements {
 		if mem, err := resource.ParseQuantity(res.Memory); err == nil {
 			requirements.Requests[v1.ResourceMemory] = mem
 			requirements.Limits[v1.ResourceMemory] = mem
+		}
+	}
+
+	if res.Storage.SystemDisk != "" {
+		if disk, err := resource.ParseQuantity(res.Storage.SystemDisk); err == nil {
+			requirements.Requests[v1.ResourceEphemeralStorage] = disk
 		}
 	}
 
