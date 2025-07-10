@@ -47,7 +47,7 @@ type GetAllInstanceResponseData struct {
 }
 
 type GetInstanceRequest struct {
-	Uuid string `json:"uuid"`
+	Uuid string `path:"uuid"`
 }
 
 type GetInstanceResponseData struct {
@@ -81,11 +81,7 @@ type Instance struct {
 }
 
 type DeleteInstanceRequest struct {
-	Uuid string `json:"uuid"`
-}
-
-type DeleteInstanceResponseData struct {
-	Uuid string `json:"uuid"`
+	Uuid string `path:"uuid"`
 }
 
 type Response struct {
