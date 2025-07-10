@@ -39,7 +39,7 @@ func NewGetInstanceLogic(ctx context.Context, svcCtx *svc.GpuContainerServiceCon
 func (l *GetAllInstanceLogic) Service(ctx context.Context) (resp *types.Response, err error) {
 	total := len(l.svcCtx.Instances)
 	data := types.GetAllInstanceResponseData{
-		ClusterName: "cluster",
+		ClusterName: l.svcCtx.Config.ClusterName,
 		Total:       total,
 		Items:       make([]types.Instance, total),
 	}
