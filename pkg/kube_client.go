@@ -28,7 +28,7 @@ func NewClientBuilder(kubeconfig string) (*ClientImpl, error) {
 	if kubeconfig != "" {
 		config, err = clientcmd.BuildConfigFromFlags("", kubeconfig)
 	} else {
-		config, err = clientcmd.BuildConfigFromFlags("", clientcmd.RecommendedHomeFile)
+		config, err = clientcmd.BuildConfigFromFlags("", "")
 	}
 
 	if err != nil {

@@ -114,4 +114,5 @@ func RegisterHandlers(r *Router, serverCtx *svc.GpuContainerServiceContext, clie
 	apiGroup.Get("/instances/:uuid", instance_manager.GetInstance)
 	apiGroup.Delete("/instances/:uuid", instance_manager.DeleteInstance)
 	apiGroup.Get("/resources", cluster_manager.GetClusterResource)
+	r.Get("/healthz", HealthzHandler)
 }

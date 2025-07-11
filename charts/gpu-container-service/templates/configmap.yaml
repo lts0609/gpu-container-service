@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: gpu-container-service-config
+  labels:
+    {{- include "gpu-container-service.labels" . | nindent 4 }}
+data:
+  config.yaml: |
+    Name: {{ .Values.config.name | default "gpu-container-service" }}
+    Host: {{ .Values.config.host | default "0.0.0.0" }}
+    Port: {{ .Values.config.port | default 8080 }}

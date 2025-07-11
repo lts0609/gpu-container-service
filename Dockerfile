@@ -1,4 +1,4 @@
-FROM m.daocloud.io/docker.io/golang:1.23-alpine as builder
+FROM m.daocloud.io/docker.io/golang:1.24-alpine as builder
 
 WORKDIR /app
 
