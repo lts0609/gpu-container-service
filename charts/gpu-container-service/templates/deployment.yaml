@@ -2,6 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ include "gpu-container-service.fullname" . }}
+  namespace: {{ include "gpu-container-service.namespace" . }}
   labels:
     {{- include "gpu-container-service.labels" . | nindent 4 }}
 spec:
@@ -27,7 +28,7 @@ spec:
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      serviceAccountName: {{ include "gpu-container-service.serviceAccountName" . }}
+      serviceAccountName: {{ include "gpu-container-service.name" . }}
       {{- with .Values.podSecurityContext }}
       securityContext:
         {{- toYaml . | nindent 8 }}

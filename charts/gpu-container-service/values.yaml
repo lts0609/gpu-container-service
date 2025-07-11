@@ -5,7 +5,6 @@
 # This will set the replicaset count more information can be found here: https://kubernetes.io/docs/concepts/workloads/controllers/replicaset/
 replicaCount: 1
 
-
 # Config of service
 config:
   name: gpu-container-service

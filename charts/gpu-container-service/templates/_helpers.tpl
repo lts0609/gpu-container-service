@@ -24,6 +24,13 @@ If release name contains chart name it will be used as a full name.
 {{- end }}
 
 {{/*
+Allow the release namespace to be overridden for multi-namespace deployments in combined charts
+*/}}
+{{- define "gpu-container-service.namespace" -}}
+    {{- .Release.Namespace -}}
+{{- end -}}
+
+{{/*
 Create chart name and version as used by the chart label.
 */}}
 {{- define "gpu-container-service.chart" -}}
@@ -50,13 +57,3 @@ app.kubernetes.io/name: {{ include "gpu-container-service.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
 
-{{/*
-Create the name of the service account to use
-*/}}
-{{- define "gpu-container-service.serviceAccountName" -}}
-{{- if .Values.serviceAccount.create }}
-{{- default (include "gpu-container-service.fullname" .) .Values.serviceAccount.name }}
-{{- else }}
-{{- default "default" .Values.serviceAccount.name }}
-{{- end }}
-{{- end }}
