@@ -4,8 +4,8 @@ import "github.com/zeromicro/go-zero/rest"
 
 type Config struct {
 	rest.RestConf
-	ClusterName        string `json:"cluster_name"`
-	SchedulingPolicy   string `json:"scheduling_policy"`
-	GpuTypeLabel       string `json:"gpu_type_label"`
-	AvaliableNodeLabel string `json:"avaliable_node_label"`
+	ClusterName        string `env:"CLUSTER_NAME"`
+	SchedulingPolicy   string `env:"SCHEDULING_POLICY"`
+	GpuTypeLabel       string `env:"GPU_TYPE_LABEL"`
+	AvaliableNodeLabel string `env:"AVALIABLE_NODE_LABEL"`
 }

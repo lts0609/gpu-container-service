@@ -20,7 +20,9 @@ func main() {
 
 	logx.Errorf("GPU Container Service Initializing...")
 	var c config.Config
+	conf.UseEnv()
 	conf.MustLoad(*configFile, &c)
+	logx.Errorf("Config loaded from environment: %+v", c)
 
 	server := rest.MustNewServer(c.RestConf)
 	defer server.Stop()

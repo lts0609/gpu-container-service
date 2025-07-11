@@ -1,7 +1,3 @@
 Name: service-api
 Host: 0.0.0.0
-Port: 8888
-cluster_name: cluster1
-scheduling_policy: share
-gpu_type_label: mfy.com/gpu-type
-avaliable_node_label: mfy.com/gpu-container
+Port: 8080
