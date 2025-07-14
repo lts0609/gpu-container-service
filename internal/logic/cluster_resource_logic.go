@@ -86,9 +86,7 @@ func GetNodeGpuResource(ctx context.Context, node v1.Node, client clientset.Inte
 			}
 		}
 	}
-
 	remain = total - used
-	logx.Errorf("Node Resource total: %s, used: %s, allocated: %s", total, used, remain)
 
 	return total, used, remain
 }

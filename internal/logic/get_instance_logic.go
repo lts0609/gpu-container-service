@@ -64,8 +64,6 @@ func (l *GetAllInstanceLogic) Service(ctx context.Context) (resp *types.Response
 
 func (l *GetInstanceLogic) Service(ctx context.Context, req *types.GetInstanceRequest) (resp *types.Response, err error) {
 	uuid := req.Uuid
-	logx.Infof("get uuid is:", uuid)
-	logx.Infof("now instance is %v", l.svcCtx.Instances)
 	item, ok := l.svcCtx.Instances[uuid]
 	if !ok {
 		return &types.Response{

@@ -106,7 +106,7 @@ func RegisterHandlers(r *Router, serverCtx *svc.GpuContainerServiceContext, clie
 	cluster_manager := controller.NewClusterController(serverCtx, client)
 	// refactor
 	session_manager := NewTerminalSessionHandler(serverCtx)
-
+	r.Get("/healthz", HealthzHandler)
 	apiGroup := r.Group("/api/v1/gpu-containers")
 	apiGroup.Get("/terminals", session_manager.TerminalSession)
 	apiGroup.Post("/instances", instance_manager.CreateInstance)
@@ -114,5 +114,4 @@ func RegisterHandlers(r *Router, serverCtx *svc.GpuContainerServiceContext, clie
 	apiGroup.Get("/instances/:uuid", instance_manager.GetInstance)
 	apiGroup.Delete("/instances/:uuid", instance_manager.DeleteInstance)
 	apiGroup.Get("/resources", cluster_manager.GetClusterResource)
-	r.Get("/healthz", HealthzHandler)
 }

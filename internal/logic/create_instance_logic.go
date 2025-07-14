@@ -129,7 +129,7 @@ func (l *CreateInstanceLogic) Service(ctx context.Context, req *types.CreateInst
 
 	instance.Name = pod.Name
 	l.svcCtx.Instances[req.Uuid] = instance
-	logx.Infof("now instance is %v", l.svcCtx.Instances)
+
 	return &types.Response{
 		Code:    http.StatusOK,
 		Message: "instance create success",

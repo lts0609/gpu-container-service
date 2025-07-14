@@ -53,6 +53,10 @@ helm-delete:
 	@echo "delete helm chart"
 	helm delete $(HELM_RELEASE_NAME) --namespace $(NAMESPACE)
 
+# 生成接口结构体
+generate-api:
+	goctl api go -api ../apis/gpu-container-service.api -dir .
+
 # 显示帮助信息
 help:
 	@echo "Usage: make [target]"
@@ -65,4 +69,4 @@ help:
 	@echo "  clean           Remove the Docker image"
 	@echo "  help            Show this help message"
 
-.PHONY: build push helm-package helm-deploy helm-delete clean help
+.PHONY: build push helm-package helm-deploy helm-delete clean help generate-api
